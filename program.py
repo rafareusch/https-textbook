@@ -2,6 +2,8 @@ from ctypes.wintypes import PFLOAT
 import os, math
 import sys, random;
 from decimal import *;
+from hashlib import sha256
+from numpy import var
 
 
 
@@ -55,6 +57,7 @@ CRIPTO_G = 'A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266F
 # generated from program
 CRIPTO_A = '610B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4319'
 
+RECEIVED_B = '009B5747A5FAC436175B67CF91BC0977935F5ABB1285F89357AB65110E459BC7FA31CC8B9B77579D455227D61E947A14F11048060AEF6BE0A59CB5EFEE05CC856A6C14E52C6D640008BB431C75FE1651E1C2106AD269B7C31EE19162C90A2AD7EB4464B2379153BDCE0D9B31528F05049EAF8A55EF241B03747A383C56CD3C1487'
 
 
 if __name__ == "__main__":
@@ -65,6 +68,7 @@ if __name__ == "__main__":
     p  = int(CRIPTO_P,16)
     g  = int(CRIPTO_G,16)
     a  = int(CRIPTO_A,16)
+    received_B  = int(RECEIVED_B,16)
     
     bigA = pow(g,a,p)
         
@@ -74,12 +78,29 @@ if __name__ == "__main__":
     print("g = ")
     print(g) 
 
-
     print("bigA = ")
     print(hex(bigA)) 
 
 
+    ######## PROGRAM START
+
+
+    input_B = int(input("Input B value in hexadecimal:\n").replace(" ",""),16)
+
+    V = pow(input_B,a,p)
+
+    print ("\n\nV =")
+    print (hex(V))
+
+    print ("\n")
     
+
+    hash = sha256(bytes.fromhex(str(hex(V))[2:]))
+    S = hash.hexdigest()
+    print('S= ', S)
+
+
+
     programEnd = False
     while(programEnd == False):
         cmd = -1
