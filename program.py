@@ -1,52 +1,13 @@
+from audioop import reverse
 from ctypes.wintypes import PFLOAT
 import os, math
 import sys, random;
 from decimal import *;
 from hashlib import sha256
 from numpy import var
+from Crypto.Cipher import AES
 
 
-
-
-
-def coprime(a, b):
-    return gcd(a, b) == 1
-
-def find_expoent(euler_function):
-    # Generates a random expoent and test if it's coprime of the euler function, if it is, returns it.
-    while(1):
-        random_e = random.randint(0, euler_function-1)
-        if (coprime(random_e,euler_function)):
-            return random_e
-
-
-
-def gcd(a, b):
-    # got from https://github.com/jchen2186/rsa-implementation/blob/master/rsa.py
-    """
-    Performs the Euclidean algorithm and returns the gcd of a and b
-    """
-    if (b == 0):
-        return a
-    else:
-        return gcd(b, a % b)
-
-def xgcd(a, b):
-    # got from https://github.com/jchen2186/rsa-implementation/blob/master/rsa.py
-    """
-    Performs the extended Euclidean algorithm
-    Returns the gcd, coefficient of a, and coefficient of b
-    """
-    x, old_x = 0, 1
-    y, old_y = 1, 0
-
-    while (b != 0):
-        quotient = a // b
-        a, b = b, a - quotient * b
-        old_x, x = x, old_x - quotient * x
-        old_y, y = y, old_y - quotient * y
-
-    return a, old_x, old_y
 
 
 
@@ -58,7 +19,7 @@ CRIPTO_G = 'A4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507FD6406CFF14266D31266F
 CRIPTO_A = '610B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C69A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C013ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD7098488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708DF1FB2BC2E4A4319'
 
 RECEIVED_B = '009B5747A5FAC436175B67CF91BC0977935F5ABB1285F89357AB65110E459BC7FA31CC8B9B77579D455227D61E947A14F11048060AEF6BE0A59CB5EFEE05CC856A6C14E52C6D640008BB431C75FE1651E1C2106AD269B7C31EE19162C90A2AD7EB4464B2379153BDCE0D9B31528F05049EAF8A55EF241B03747A383C56CD3C1487'
-
+RECEIVED_MSG = 'CD100D314D4E5DC6BED4E2B8B6B7EAC43E1DE477E44B9C616DE4F380D63D722D3DEF09C5102C2ED24021546EC3CCE8D27428908D6682BF64211AE9354BBD28C67C7DCAAC419AFFA2D0D2D7824DEE3A151C69545A0B3FCA4EDD2A0C8520836FFC8CA8010BA7C0316B517B8BA5E48C62AF57CF5D73EDE858F09DBA9FEF33B51D7CFB055F3ADE235126F6F7F6F4888C8FBF'
 
 if __name__ == "__main__":
 
@@ -84,108 +45,64 @@ if __name__ == "__main__":
 
     ######## PROGRAM START
 
+    input_B =  int(RECEIVED_B,16) # int(input("Input B value in hexadecimal:\n").replace(" ",""),16)
 
-    input_B = int(input("Input B value in hexadecimal:\n").replace(" ",""),16)
+    intV = pow(input_B,a,p)
 
-    V = pow(input_B,a,p)
+    print ("V =")
+    print (hex(intV))
 
-    print ("\n\nV =")
-    print (hex(V))
 
-    print ("\n")
     
 
-    hash = sha256(bytes.fromhex(str(hex(V))[2:]))
-    S = hash.hexdigest()
-    print('S= ', S)
+    hash = sha256(bytes.fromhex(str(hex(intV))[2:]))
+    hexS = hash.hexdigest()
+    print('S= ',hexS)
+
+    hexKey = hexS[0:32]
+    print('AES key= ', hexKey)
+
+
+    input_MSG = int(RECEIVED_MSG,16) #int(input("Input IV+MSG value in hexadecimal:\n").replace(" ",""),16)
+
+    hexIv = str(hex(input_MSG))[2:34]
+    hexMsg = str(hex(input_MSG))[34:]
+
+    print('IV = ', hexIv )
+    print('MSG = ', hexMsg )
+
+    print ("\n")
+
+    
+    aes = AES.new(bytes.fromhex(hexKey), AES.MODE_CBC, bytes.fromhex(hexIv))
+    aes1 = AES.new(bytes.fromhex(hexKey), AES.MODE_CBC, bytes.fromhex(hexIv))
+
+    # DECRYPT PROFESSOR MESSAGE
+    recvPlaintextRaw = aes.decrypt(bytes.fromhex(hexMsg))
+    recvPlaintext = recvPlaintextRaw.decode("utf-8")
+    print('Received Plaintex: ', recvPlaintext)
 
 
 
-    programEnd = False
-    while(programEnd == False):
-        cmd = -1
-        try:
-            cmd = int(input("\n\nChoose an option\n 0 - Leave\n 1- Cipher message \n 2- Decipher message \n 3- Generate new keys\n"))
-        except:
-            print("Invalid command")
-
-        if (cmd == 0):
-            programEnd = True
-
-        elif (cmd == 1): # CRYPT ADICIONAR LIMITE MENSAGEM
-
-            publicN = int(input("\n\nInsert n ( 0 to use private key )\n"))
-            if (publicN == 0): 
-                publicN = cripto_n
-                publicE = cripto_e
-            else:
-                publicE = int(input("\n\nInsert e (0 to use private key)\n"))
-            
-            inputText = str(input("\n\nInsert text to be ciphered\n"))
-        
-            # Convert INPUT to ASCII int
-            codedMessage = ord(inputText[0])
-            for i in range(1,len(inputText)):
-                codedMessage = codedMessage * 100
-                codedMessage += ord(inputText[i])
-            print("ascii: ",int(codedMessage))    
-            
-            # Process M
-            print ("M =  ")
-            print(pow(int(codedMessage),publicE,publicN))
+    print ("\n")
+    sendPlaintextRaw = recvPlaintextRaw[::-1]
+    print('Sent Plaintex: ', sendPlaintextRaw.decode("utf-8"))
 
 
-        elif (cmd == 2): # DECRYPT
-            publicN = int(input("\n\nInsert n ( 0 to use private key )\n"))
-            if (publicN == 0): 
-                publicN = cripto_n
-                publicD = cripto_d
-            else:
-                publicD = int(input("\n\nInsert d ( 0 to use private key )\n"))
-             
-            cipheredM = int(input("\n\nInsert ciphered message\n"))
-            
-            decodedMessage = pow(int(cipheredM),publicD,publicN)
-            print(" \n Decoded message: ")
-            strDecodedMessage = str(decodedMessage)
-            i = 0
-            while ( i+1 < len(strDecodedMessage)):
-                print(str(chr(int(strDecodedMessage[i])*10 + int(strDecodedMessage[i+1]))), end = '')
-                i += 2
-            strDecodedMessage = ""
-                
+    #ENCRYPT AND CONVERT TO HEXSTRING
+    ciphertext = aes.encrypt(sendPlaintextRaw)
+    ciphertext = ciphertext.hex()
+    print ("\n")
+    print('ciphertext hex string: ',ciphertext)
+    print ("\n")
+    print ("\n")
 
-        elif (cmd == 3): # NEW KEYS
-            print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
-            cripto_p = number.getPrime(n_length, os.urandom)
-            print("p = ")
-            print(cripto_p) 
-            cripto_q = number.getPrime(n_length, os.urandom)
-            print("d = ")
-            print(cripto_q) 
-
-            cripto_n = cripto_p * cripto_q
-            print ("n = ")
-            print(cripto_n)
-
-            cripto_euler = (cripto_p - 1)*(cripto_q - 1)
-
-            cripto_e = find_expoent(cripto_euler)
-            print ("e =" )
-            print(cripto_e)
+    testPlaintext = aes1.decrypt(bytes.fromhex(ciphertext))
+    print('RAW DECODE',testPlaintext)
+    testPlaintext = testPlaintext.decode("utf-8")
+    print ("\n")
+    print('DECODED Plaintex: ', testPlaintext)
 
 
-            xgcd_return,a,b = xgcd(cripto_e,cripto_euler) 
-            if (a < 0):
-                cripto_d = a + cripto_euler
-            else:
-                cripto_d = a
-            print ("d =" )
-            print(cripto_d)
-        else:
-            print("Incorrect message\n")
-    """ 
-    Encryption: <number> * e mod n = <cryptogram>
 
-    Decryption: <cryptogram> * d mon n = <number>
-    """ 
+
