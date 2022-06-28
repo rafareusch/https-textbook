@@ -6,6 +6,7 @@ from decimal import *;
 from hashlib import sha256
 from numpy import var
 from Crypto.Cipher import AES
+from Crypto.Util.Padding import pad, unpad
 
 
 
@@ -45,7 +46,7 @@ if __name__ == "__main__":
 
     ######## PROGRAM START
 
-    input_B =  int(RECEIVED_B,16) # int(input("Input B value in hexadecimal:\n").replace(" ",""),16)
+    input_B =  int(input("Input B value in hexadecimal:\n").replace(" ",""),16)  # int(RECEIVED_B,16) #
 
     intV = pow(input_B,a,p)
 
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     print('AES key= ', hexKey)
 
 
-    input_MSG = int(RECEIVED_MSG,16) #int(input("Input IV+MSG value in hexadecimal:\n").replace(" ",""),16)
+    input_MSG =  int(input("Input IV+MSG value in hexadecimal:\n").replace(" ",""),16) #int(RECEIVED_MSG,16)
 
     hexIv = str(hex(input_MSG))[2:34]
     hexMsg = str(hex(input_MSG))[34:]
@@ -76,9 +77,10 @@ if __name__ == "__main__":
     
     aes = AES.new(bytes.fromhex(hexKey), AES.MODE_CBC, bytes.fromhex(hexIv))
     aes1 = AES.new(bytes.fromhex(hexKey), AES.MODE_CBC, bytes.fromhex(hexIv))
+    aes2 = AES.new(bytes.fromhex(hexKey), AES.MODE_CBC, bytes.fromhex(hexIv))
 
     # DECRYPT PROFESSOR MESSAGE
-    recvPlaintextRaw = aes.decrypt(bytes.fromhex(hexMsg))
+    recvPlaintextRaw = unpad(aes.decrypt(bytes.fromhex(hexMsg)),16)
     recvPlaintext = recvPlaintextRaw.decode("utf-8")
     print('Received Plaintex: ', recvPlaintext)
 
@@ -90,18 +92,17 @@ if __name__ == "__main__":
 
 
     #ENCRYPT AND CONVERT TO HEXSTRING
-    ciphertext = aes.encrypt(sendPlaintextRaw)
+    ciphertext = aes1.encrypt(pad(sendPlaintextRaw,16))
     ciphertext = ciphertext.hex()
-    print ("\n")
-    print('ciphertext hex string: ',ciphertext)
+    print('Ciphertext Hex String: ',ciphertext)
     print ("\n")
     print ("\n")
 
-    testPlaintext = aes1.decrypt(bytes.fromhex(ciphertext))
+
+    # DECODE THE SENT MESSAGE (VERIFICATION)
+    testPlaintext = aes2.decrypt(bytes.fromhex(ciphertext))
     print('RAW DECODE',testPlaintext)
-    testPlaintext = testPlaintext.decode("utf-8")
-    print ("\n")
-    print('DECODED Plaintex: ', testPlaintext)
+    print('DECODED Plaintex: ', testPlaintext.decode("utf-8"))
 
 
 
